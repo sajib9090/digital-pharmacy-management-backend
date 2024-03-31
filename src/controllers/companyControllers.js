@@ -1,61 +1,59 @@
 import createError from "http-errors";
 import { ObjectId } from "mongodb";
-import { genericCollection } from "../collections/collections.js";
+import { companyCollection } from "../collections/collections.js";
 import { medicineCollection } from "../collections/collections.js";
 import { validateString } from "../helper/validateString.js";
 import slugify from "slugify";
 
-const handleCreateGeneric = async (req, res, next) => {
-  const { generic_name, shop_name } = req.body;
-
+const handleCreateCompany = async (req, res, next) => {
+  const { company_name, shop_name } = req.body;
   try {
-    if (!generic_name) {
-      throw createError(400, "Generic name is required");
+    if (!company_name) {
+      throw createError(400, "Company/supplier name is required");
     }
     if (!shop_name) {
       throw createError(400, "Shop name is required");
     }
-
-    const processedGeneric = validateString(generic_name, "Generic");
+    const processedCompany = validateString(company_name, "Company");
     const processedShopName = validateString(shop_name, "Shop name");
 
-    const generic_slug = slugify(processedGeneric);
+    const company_slug = slugify(processedCompany);
     const shop_slug = slugify(processedShopName);
 
-    const existingName = await genericCollection.findOne({
-      generic_name: processedGeneric,
+    const existingName = await companyCollection.findOne({
+      company_name: processedCompany,
       shop_name: processedShopName,
     });
 
     if (existingName) {
-      throw createError(400, "Already exists this generic name");
+      throw createError(400, "Already exists this company/supplier");
     }
 
-    const count = await genericCollection.countDocuments();
-    const genericId = String(count + 1).padStart(14, "0");
+    const count = await companyCollection.countDocuments();
+    const companyId = String(count + 1).padStart(10, "0");
 
-    const newGeneric = {
-      generic_id: genericId,
-      generic_name: processedGeneric,
+    const newCompany = {
+      company_id: companyId,
+      company_name: processedCompany,
       shop_name: processedShopName,
-      generic_slug,
+      company_slug,
       shop_slug,
       createdAt: new Date(),
     };
 
-    await genericCollection.insertOne(newGeneric);
+    await companyCollection.insertOne(newCompany);
 
     res.status(200).send({
       success: true,
-      message: "Generic created successfully",
-      data: newGeneric,
+      message: "Company created successfully",
+      data: newCompany,
     });
   } catch (error) {
     next(error);
   }
 };
 
-const handleGetAllGeneric = async (req, res, next) => {
+const handleGetAllCompany = async (req, res, next) => {
   try {
     const { shop_name } = req.query;
     const search = req.query.search || "";
@@ -65,38 +63,38 @@ const handleGetAllGeneric = async (req, res, next) => {
     if (!shop_name) {
       throw createError(400, "shop name is required to find data");
     }
-    const regExSearch = new RegExp(".*" + search + ".*", "i");
 
+    const regExSearch = new RegExp(".*" + search + ".*", "i");
     const processedShopName = validateString(shop_name, "shop name");
 
     const filter = {
       shop_name: processedShopName,
-      $or: [{ generic_name: { $regex: regExSearch } }],
+      $or: [{ company_name: { $regex: regExSearch } }],
     };
 
-    const generics = await genericCollection
+    const companies = await companyCollection
       .find(filter)
-      .sort({ generic_name: 1 })
+      .sort({ company_name: 1 })
       .limit(limit)
       .skip((page - 1) * limit)
       .toArray();
 
-    for (const generic of generics) {
+    for (const company of companies) {
       const medicine_available = await medicineCollection
         .find({
           shop_name: processedShopName,
-          generic_name: generic.generic_name,
+          company_name: company?.company_name,
         })
         .count();
 
-      generic.medicine_available = medicine_available;
+      company.medicine_available = medicine_available;
     }
 
-    const count = await genericCollection.find(filter).count();
+    const count = await companyCollection.find(filter).count();
 
     res.status(200).send({
       success: true,
-      message: "generics retrieved successfully",
+      message: "Companies retrieved successfully",
       shop_name: processedShopName,
       data_found: count,
       pagination: {
@@ -105,14 +103,14 @@ const handleGetAllGeneric = async (req, res, next) => {
         previousPage: page - 1 > 0 ? page - 1 : null,
         nextPage: page + 1 <= Math.ceil(count / limit) ? page + 1 : null,
       },
-      data: generics,
+      data: companies,
     });
   } catch (error) {
     next(error);
   }
 };
 
-const handleGetSingleGeneric = async (req, res, next) => {
+const handleGetSingleCompany = async (req, res, next) => {
   const { id } = req.query;
   try {
     if (!id) {
@@ -123,15 +121,15 @@ const handleGetSingleGeneric = async (req, res, next) => {
       throw createError(400, "Invalid id");
     }
 
-    const exists = await genericCollection.findOne({ _id: new ObjectId(id) });
+    const exists = await companyCollection.findOne({ _id: new ObjectId(id) });
     if (!exists) {
-      throw createError(404, "No generic found with this Id");
+      throw createError(404, "No company found with this Id");
     }
 
     const medicineAvailable = await medicineCollection
       .find({
         shop_name: exists?.shop_name,
-        generic_name: exists?.generic_name,
+        company_name: exists?.company_name,
       })
       .toArray();
 
@@ -142,7 +140,7 @@ const handleGetSingleGeneric = async (req, res, next) => {
 
     res.status(200).send({
       success: true,
-      message: "Generic retrieved successfully",
+      message: "Company retrieved successfully",
       data: result,
     });
   } catch (error) {
@@ -150,19 +148,19 @@ const handleGetSingleGeneric = async (req, res, next) => {
   }
 };
 
-const handleDeleteGeneric = async (req, res, next) => {
+const handleDeleteCompany = async (req, res, next) => {
   try {
     const { id } = req.params;
     if (!ObjectId.isValid(id)) {
       throw createError(400, "Invalid id");
     }
 
-    const exists = await genericCollection.findOne({ _id: new ObjectId(id) });
+    const exists = await companyCollection.findOne({ _id: new ObjectId(id) });
     if (!exists) {
-      throw createError(404, "No such generic found.");
+      throw createError(404, "No such company found.");
     }
 
-    const deleteCount = await genericCollection.deleteOne({
+    const deleteCount = await companyCollection.deleteOne({
       _id: new ObjectId(id),
     });
 
@@ -172,7 +170,7 @@ const handleDeleteGeneric = async (req, res, next) => {
 
     res.status(200).send({
       success: true,
-      message: "Generic deleted successfully",
+      message: "Company deleted successfully",
     });
   } catch (error) {
     next(error);
@@ -180,8 +178,8 @@ const handleDeleteGeneric = async (req, res, next) => {
 };
 
 export {
-  handleCreateGeneric,
-  handleGetAllGeneric,
-  handleGetSingleGeneric,
-  handleDeleteGeneric,
+  handleCreateCompany,
+  handleGetAllCompany,
+  handleGetSingleCompany,
+  handleDeleteCompany,
 };

@@ -6,6 +6,7 @@ import createError from "http-errors";
 import { rateLimit } from "express-rate-limit";
 import UAParser from "ua-parser-js";
 import { genericRouter } from "./routers/genericRouters.js";
+import { companyRouter } from "./routers/companyRouters.js";
 
 const app = express();
 
@@ -34,6 +35,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/generics", genericRouter);
+app.use("/api/v1/companies", companyRouter);
 
 app.get("/", (req, res) => {
   const clientIP = req.ip;

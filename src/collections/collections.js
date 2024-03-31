@@ -4,5 +4,6 @@ const db_name = "Digital-Pharmacy";
 
 const genericCollection = client.db(db_name).collection("generics");
 const medicineCollection = client.db(db_name).collection("medicines");
+const companyCollection = client.db(db_name).collection("companies");
 
-export { genericCollection, medicineCollection };
+export { genericCollection, medicineCollection, companyCollection };
