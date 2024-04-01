@@ -108,7 +108,7 @@ const handleCreateMedicine = async (req, res, next) => {
 
     res.status(200).send({
       success: true,
-      message: "Medicine created successfully",
+      message: "Medicine added successfully",
       data: newMedicine,
     });
   } catch (error) {
