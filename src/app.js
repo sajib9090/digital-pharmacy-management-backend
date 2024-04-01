@@ -7,6 +7,8 @@ import { rateLimit } from "express-rate-limit";
 import UAParser from "ua-parser-js";
 import { genericRouter } from "./routers/genericRouters.js";
 import { companyRouter } from "./routers/companyRouters.js";
+import { dosageRouter } from "./routers/dosageFormRouters.js";
+import { medicineRouter } from "./routers/medicineRouters.js";
 
 const app = express();
 
@@ -36,6 +38,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/generics", genericRouter);
 app.use("/api/v1/companies", companyRouter);
+app.use("/api/v1/dosage-forms", dosageRouter);
+app.use("/api/v1/medicines", medicineRouter);
 
 app.get("/", (req, res) => {
   const clientIP = req.ip;
