@@ -80,17 +80,15 @@ const handleGetAllDosage = async (req, res, next) => {
       .toArray();
 
     for (const dosage of dosageForms) {
-      const medicine_available = await medicineCollection
-        .find({
-          shop_name: processedShopName,
-          dosage_form: dosage?.dosage_form,
-        })
-        .count();
+      const medicine_available = await medicineCollection.countDocuments({
+        shop_name: processedShopName,
+        dosage_form: dosage?.dosage_form,
+      });
 
       dosage.medicine_available = medicine_available;
     }
 
-    const count = await dosageCollection.find(filter).count();
+    const count = await dosageCollection.countDocuments(filter);
 
     res.status(200).send({
       success: true,

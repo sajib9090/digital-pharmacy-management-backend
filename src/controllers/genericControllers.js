@@ -82,17 +82,15 @@ const handleGetAllGeneric = async (req, res, next) => {
       .toArray();
 
     for (const generic of generics) {
-      const medicine_available = await medicineCollection
-        .find({
-          shop_name: processedShopName,
-          generic_name: generic.generic_name,
-        })
-        .count();
+      const medicine_available = await medicineCollection.countDocuments({
+        shop_name: processedShopName,
+        generic_name: generic.generic_name,
+      });
 
       generic.medicine_available = medicine_available;
     }
 
-    const count = await genericCollection.find(filter).count();
+    const count = await genericCollection.countDocuments(filter);
 
     res.status(200).send({
       success: true,

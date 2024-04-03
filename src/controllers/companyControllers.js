@@ -80,17 +80,15 @@ const handleGetAllCompany = async (req, res, next) => {
       .toArray();
 
     for (const company of companies) {
-      const medicine_available = await medicineCollection
-        .find({
-          shop_name: processedShopName,
-          company_name: company?.company_name,
-        })
-        .count();
+      const medicine_available = await medicineCollection.countDocuments({
+        shop_name: processedShopName,
+        company_name: company?.company_name,
+      });
 
       company.medicine_available = medicine_available;
     }
 
-    const count = await companyCollection.find(filter).count();
+    const count = await companyCollection.countDocuments(filter);
 
     res.status(200).send({
       success: true,
