@@ -58,7 +58,7 @@ const handleGetAllCompany = async (req, res, next) => {
     const { shop_name } = req.query;
     const search = req.query.search || "";
     const page = Number(req.query.page) || 1;
-    const limit = Number(req.query.limit) || 100;
+    const limit = Number(req.query.limit);
 
     if (!shop_name) {
       throw createError(400, "shop name is required to find data");

@@ -9,6 +9,7 @@ import { genericRouter } from "./routers/genericRouters.js";
 import { companyRouter } from "./routers/companyRouters.js";
 import { dosageRouter } from "./routers/dosageFormRouters.js";
 import { medicineRouter } from "./routers/medicineRouters.js";
+import { purchaseRouter } from "./routers/purchaseRouters.js";
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use("/api/v1/generics", genericRouter);
 app.use("/api/v1/companies", companyRouter);
 app.use("/api/v1/dosage-forms", dosageRouter);
 app.use("/api/v1/medicines", medicineRouter);
+app.use("/api/v1/purchases", purchaseRouter);
 
 app.get("/", (req, res) => {
   const clientIP = req.ip;
