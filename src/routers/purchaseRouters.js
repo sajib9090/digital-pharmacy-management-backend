@@ -1,10 +1,13 @@
 import express from "express";
-import { handleCreatePurchase } from "../controllers/purchaseController.js";
+import {
+  handleCreatePurchase,
+  handleGetPurchaseInvoice,
+} from "../controllers/purchaseController.js";
 
 const purchaseRouter = express.Router();
 
 purchaseRouter.post("/create/purchase", handleCreatePurchase);
-// medicineRouter.get("/get-all", handleGetMedicines);
+purchaseRouter.get("/get-all", handleGetPurchaseInvoice);
 // medicineRouter.get("/get-medicine", handleGetSingleMedicine);
 // medicineRouter.delete("/delete-medicine/:id", handleDeleteMedicine);
 

@@ -5,8 +5,6 @@ import {
   purchaseCollection,
 } from "../collections/collections.js";
 import { validateString } from "../helper/validateString.js";
-import slugify from "slugify";
-import validator from "validator";
 
 const handleCreatePurchase = async (req, res, next) => {
   const { shop_name } = req.query;
@@ -58,19 +56,10 @@ const handleCreatePurchase = async (req, res, next) => {
       shop_name: processedShopName,
     });
 
-    const newPurchase = {
-      shop_name: processedShopName,
-      purchase_id: count + 1,
-      category: processedCategoryName,
-      total_price: totalPrice,
-      total_discount: totalDiscount,
-      total_tax: totalTax,
-      items: items,
-      createdAt: new Date(),
-    };
-
     const itemsId = items?.map((item) => item._id);
+    const companyName = items?.map((item) => item?.company_name);
     const objectIds = itemsId?.map((id) => new ObjectId(id));
+
     // Check whether all the items exist in database
     const existingItems = await medicineCollection
       .find({ _id: { $in: objectIds } })
@@ -81,6 +70,18 @@ const handleCreatePurchase = async (req, res, next) => {
     if (!allItemsExist) {
       throw createError(400, "All items not found");
     }
+
+    const newPurchase = {
+      shop_name: processedShopName,
+      purchase_id: count + 1,
+      company_name: companyName[0],
+      category: processedCategoryName,
+      total_price: totalPrice,
+      total_discount: totalDiscount,
+      total_tax: totalTax,
+      items: items,
+      createdAt: new Date(),
+    };
 
     for (const item of items) {
       const existingItem = existingItems.find(
@@ -116,4 +117,104 @@ const handleCreatePurchase = async (req, res, next) => {
   }
 };
 
-export { handleCreatePurchase };
+const handleGetPurchaseInvoice = async (req, res, next) => {
+  const { shop_name } = req.query;
+  const company_name = req.query.company_name || "";
+  let startDate = req.query.startDate || "";
+  let endDate = req.query.endDate || "";
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit);
+  const search = req.query.search || "";
+  const price = req.query.price || "";
+  const category = req.query.category || "";
+
+  try {
+    if (!shop_name) {
+      throw createError(400, "Shop name is required in query");
+    }
+    const processedShopName = validateString(shop_name, "Shop");
+
+    const regExCategory = new RegExp(".*" + category + ".*", "i");
+    const regExCompanyName = new RegExp(".*" + company_name + ".*", "i");
+    const regExSearch = new RegExp(".*" + search + ".*", "i");
+
+    let filter = {
+      shop_name: processedShopName,
+    };
+
+    if (company_name) {
+      filter.company_name = { $regex: regExCompanyName };
+    }
+
+    if (category) {
+      filter.category = { $regex: regExCategory };
+    }
+
+    if (search) {
+      if (search.length == 24) {
+        filter.$or = [{ _id: new ObjectId(search) }];
+      } else {
+        filter.$or = [
+          { company_name: { $regex: regExSearch } },
+          { category: { $regex: regExSearch } },
+        ];
+      }
+    }
+
+    let sortOption = { createdAt: 1 };
+
+    if (price == "low-to-high") {
+      sortOption = { total_price: 1 };
+    }
+    if (price == "high-to-low") {
+      sortOption = { total_price: -1 };
+    }
+
+    if (startDate) {
+      startDate = new Date(startDate);
+      startDate.setHours(0, 0, 0, 0);
+      filter.createdAt = { $gte: startDate };
+    }
+
+    if (endDate) {
+      endDate = new Date(endDate);
+      endDate.setHours(23, 59, 59, 999);
+      filter.createdAt = { ...filter.createdAt, $lte: endDate };
+    }
+
+    const invoices = await purchaseCollection
+      .find(filter)
+      .sort(sortOption)
+      .limit(limit)
+      .skip((page - 1) * limit)
+      .toArray();
+
+    const countFilter = { ...filter };
+    if (search) {
+      countFilter.$or = [
+        { company_name: { $regex: regExSearch } },
+        { _id: { $regex: regExSearch } },
+      ];
+    }
+
+    const count = await purchaseCollection.countDocuments(countFilter);
+
+    res.status(200).send({
+      success: true,
+      message: "Purchase invoices retrieved successfully",
+      shop_name: processedShopName,
+      data_found: count,
+      pagination: {
+        totalPages: Math.ceil(count / limit),
+        currentPage: page,
+        previousPage: page - 1 > 0 ? page - 1 : null,
+        nextPage: page + 1 <= Math.ceil(count / limit) ? page + 1 : null,
+      },
+      data: invoices,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { handleCreatePurchase, handleGetPurchaseInvoice };
