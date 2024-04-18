@@ -119,7 +119,6 @@ const handleCreatePurchase = async (req, res, next) => {
 
 const handleGetPurchaseInvoice = async (req, res, next) => {
   const { shop_name } = req.query;
-  const company_name = req.query.company_name || "";
   let startDate = req.query.startDate || "";
   let endDate = req.query.endDate || "";
   const page = Number(req.query.page) || 1;
@@ -135,16 +134,11 @@ const handleGetPurchaseInvoice = async (req, res, next) => {
     const processedShopName = validateString(shop_name, "Shop");
 
     const regExCategory = new RegExp(".*" + category + ".*", "i");
-    const regExCompanyName = new RegExp(".*" + company_name + ".*", "i");
     const regExSearch = new RegExp(".*" + search + ".*", "i");
 
     let filter = {
       shop_name: processedShopName,
     };
-
-    if (company_name) {
-      filter.company_name = { $regex: regExCompanyName };
-    }
 
     if (category) {
       filter.category = { $regex: regExCategory };
